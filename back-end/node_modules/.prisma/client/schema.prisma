@@ -1,0 +1,99 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String   @id @default(uuid())
+  username            String   @unique
+  password            String
+  role                Role     @relation(fields: [roleId], references: [id])
+  roleId              String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  eventsAsProdi       Event[]  @relation("EventAdminProdi")
+  eventsAsUniversitas Event[]  @relation("EventAdminUniversitas")
+  newsAsProdi         News[]   @relation("NewsAdminProdi")
+  newsAsUniversitas   News[]   @relation("NewsAdminUniversitas")
+  authoredEvents      Event[]  @relation("EventAuthor")
+  authoredNews        News[]   @relation("NewsAuthor")
+
+  @@map("users")
+}
+
+model Role {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  users     User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("roles")
+}
+
+model News {
+  id                 Int      @id @default(autoincrement())
+  title              String   @unique
+  content            String   @db.Text
+  image              String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  author             User     @relation("NewsAuthor", fields: [authorId], references: [id])
+  authorId           String
+  adminProdi         User?    @relation("NewsAdminProdi", fields: [adminProdiId], references: [id])
+  adminProdiId       String? // ID dari admin prodi yang membuat berita (opsional)
+  adminUniversitas   User?    @relation("NewsAdminUniversitas", fields: [adminUniversitasId], references: [id])
+  adminUniversitasId String? // ID dari admin universitas yang memverifikasi berita
+  verified           Boolean  @default(false) // Status verifikasi
+}
+
+model Event {
+  id                 Int      @id @default(autoincrement())
+  title              String   @unique
+  description        String?  @db.Text
+  image              String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  author             User     @relation("EventAuthor", fields: [authorId], references: [id])
+  authorId           String
+  adminProdi         User?    @relation("EventAdminProdi", fields: [adminProdiId], references: [id])
+  adminProdiId       String? // ID dari admin prodi yang membuat event (opsional)
+  adminUniversitas   User?    @relation("EventAdminUniversitas", fields: [adminUniversitasId], references: [id])
+  adminUniversitasId String? // ID dari admin universitas yang memverifikasi event
+  verified           Boolean  @default(false) // Status verifikasi
+}
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?   @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  Product     Product[]
+}
+
+model Product {
+  id          String   @id @unique @default(uuid())
+  name        String   @unique
+  description String?  @db.Text
+  price       Int
+  categoryId  Int // FK yang menghubungkan ke category
+  image       String
+  stock       Int      @default(0)
+  countReview Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("Products") // Jika tabel di database menggunakan nama "Products"
+}
